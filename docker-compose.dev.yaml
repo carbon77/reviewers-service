@@ -1,7 +1,9 @@
 version: "3"
 services:
-  backend:
-    build: .
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     environment:
       DB_USER: zakat
       DB_PASSWORD: zakat_pwd
@@ -11,6 +13,8 @@ services:
       - 8080:8080
     depends_on:
       - migrate
+    volumes:
+      - ./:/app
 
   db:
     image: postgres:18
@@ -19,11 +23,12 @@ services:
       POSTGRES_USER: zakat
       POSTGRES_PASSWORD: zakat_pwd
       POSTGRES_DB: reviewers_db
-    ports: []
+    ports:
+      - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U zakat -d reviewers_db" ]
+      test: ["CMD-SHELL", "pg_isready -U zakat -d reviewers_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,12 +36,26 @@ services:
 
   migrate:
     image: migrate/migrate
-    command: [ "-path", "/migrations", "-database", "postgres://zakat:zakat_pwd@db:5432/reviewers_db?sslmode=disable", "up" ]
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://zakat:zakat_pwd@db:5432/reviewers_db?sslmode=disable",
+        "up",
+      ]
     volumes:
       - ./migrations:/migrations
     depends_on:
       db:
         condition: service_healthy
+
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - migrate
 
 volumes:
   db-data:

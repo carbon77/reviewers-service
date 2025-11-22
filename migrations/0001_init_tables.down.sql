@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS pull_request_reviewers;
+DROP TABLE IF EXISTS pull_requests;
+DROP TABLE IF EXISTS user_teams;
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS pr_status;
+DROP EXTENSION IF EXISTS "uuid-ossp";
