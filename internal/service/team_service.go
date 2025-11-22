@@ -20,3 +20,7 @@ func (s *TeamService) GetTeam(name string) (*models.Team, error) {
 func (s *TeamService) CreateTeam(newTeam *models.Team) error {
 	return s.repo.CreateTeam(newTeam)
 }
+
+func (s *TeamService) GetReviewerIdsFromUserTeam(userID string) ([]*models.User, error) {
+	return s.repo.GetReviewerIdsFromUserTeam(userID)
+}

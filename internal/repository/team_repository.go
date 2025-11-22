@@ -66,3 +66,26 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 		return nil
 	})
 }
+
+func (r *TeamRepository) GetReviewerIdsFromUserTeam(userID string) ([]*models.User, error) {
+	var reviewers []*models.User
+
+	err := r.db.Model(&models.User{}).
+		Where("team_id = (?)", r.db.Model(&models.User{}).
+			Select("team_id").
+			Where("user_id = ?", userID).
+			Limit(1),
+		).
+		Where("user_id <> ?", userID).
+		Where("is_active = true").
+		Find(&reviewers).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ResourceNotFound
+		}
+		return nil, fmt.Errorf("failed to find users from team: %s", err.Error())
+	}
+
+	return reviewers, nil
+}

@@ -28,6 +28,8 @@ type PullRequest struct {
 	Author   User   `json:"-" gorm:"foreignKey:AuthorID"`
 
 	Reviewers []User `json:"-" gorm:"many2many:pull_request_reviewers"`
+
+	AssignedReviewers []string `json:"assigned_reviewers" gorm:"-"`
 }
 
 const StatusOpen = "OPEN"
