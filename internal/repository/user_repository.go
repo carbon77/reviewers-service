@@ -4,7 +4,6 @@ import (
 	"reviewers/internal/errs"
 	"reviewers/internal/models"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -16,7 +15,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db}
 }
 
-func (r *UserRepository) SetActiveStatus(userID uuid.UUID, active bool) error {
+func (r *UserRepository) SetActiveStatus(userID string, active bool) error {
 	result := r.db.Model(&models.User{}).
 		Where("user_id = ?", userID).
 		Update("is_active", active)
@@ -32,7 +31,7 @@ func (r *UserRepository) SetActiveStatus(userID uuid.UUID, active bool) error {
 	return nil
 }
 
-func (r *UserRepository) GetReview(userID uuid.UUID) ([]models.PullRequest, error) {
+func (r *UserRepository) GetReview(userID string) ([]models.PullRequest, error) {
 	var prs []models.PullRequest
 
 	err := r.db.Model(&models.PullRequest{}).

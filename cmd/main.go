@@ -27,6 +27,16 @@ func main() {
 		userRouter.GET("/getReview", userHandler.GetReview)
 	}
 
+	{
+		teamRepository := repository.NewTeamRepository(conn)
+		teamService := service.NewTeamService(teamRepository)
+		teamHandler := handler.NewTeamHandler(teamService)
+
+		teamRouter := router.Group("/team")
+		teamRouter.GET("/get", teamHandler.GetTeam)
+		teamRouter.POST("/add", teamHandler.CreateTeam)
+	}
+
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	router.Run(addr)
 }

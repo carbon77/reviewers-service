@@ -7,7 +7,6 @@ import (
 	"reviewers/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type UserHandler struct {
@@ -31,13 +30,7 @@ func (h *UserHandler) SetActiveStatus(c *gin.Context) {
 		return
 	}
 
-	userUuid, err := uuid.Parse(req.UserID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
-		return
-	}
-
-	if err := h.service.SetActiveStatus(userUuid, req.IsActive); err != nil {
+	if err := h.service.SetActiveStatus(req.UserID, req.IsActive); err != nil {
 		if errors.Is(err, errs.ResourceNotFound) {
 			response := errs.NewErrorResponse("NOT_FOUND", err.Error())
 			c.JSON(http.StatusNotFound, response)
@@ -60,13 +53,7 @@ func (h *UserHandler) GetReview(c *gin.Context) {
 		return
 	}
 
-	userUuid, err := uuid.Parse(userId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
-		return
-	}
-
-	prs, err := h.service.GetReview(userUuid)
+	prs, err := h.service.GetReview(userId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

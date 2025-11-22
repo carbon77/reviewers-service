@@ -1,0 +1,70 @@
+package repository
+
+import (
+	"errors"
+	"fmt"
+	"reviewers/internal/errs"
+	"reviewers/internal/models"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type TeamRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamRepository(db *gorm.DB) *TeamRepository {
+	return &TeamRepository{db}
+}
+
+func (r *TeamRepository) GetTeam(name string) (*models.Team, error) {
+	var team models.Team
+
+	result := r.db.Where("name = ?", name).Preload("Members").First(&team)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return &team, errs.ResourceNotFound
+	}
+
+	return &team, result.Error
+}
+
+func (r *TeamRepository) CreateTeam(team *models.Team) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var newUsers []*models.User
+
+		for i := range team.Members {
+			user := &team.Members[i]
+
+			if user.ID != "" {
+				if err := tx.Save(user).Error; err != nil {
+					return fmt.Errorf("failed to update user %s: %w", user.ID, err)
+				}
+			} else {
+				user.ID = uuid.New().String()
+				newUsers = append(newUsers, user)
+			}
+		}
+
+		if len(newUsers) > 0 {
+			if err := tx.Create(newUsers).Error; err != nil {
+				return fmt.Errorf("failed to create users: %w", err)
+			}
+		}
+
+		team.ID = uuid.New().String()
+		if err := tx.Select("ID", "Name").Create(team).Error; err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return errs.TeamAlreadyExists
+			}
+			return fmt.Errorf("failed to create team %s: %w", team.Name, err)
+		}
+
+		if err := tx.Model(team).Association("Members").Replace(team.Members); err != nil {
+			return fmt.Errorf("failed to associate members with team %s: %w", team.Name, err)
+		}
+
+		return nil
+	})
+}

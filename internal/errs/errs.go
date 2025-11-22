@@ -21,3 +21,4 @@ func NewErrorResponse(code string, message string) ErrorResponse {
 }
 
 var ResourceNotFound = errors.New("resource not found")
+var TeamAlreadyExists = errors.New("team already exists")

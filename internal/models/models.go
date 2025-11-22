@@ -2,46 +2,39 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type User struct {
-	UserID   uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Username string
-	IsActive bool
+	ID       string `json:"user_id" gorm:"column:user_id;primaryKey"`
+	Username string `json:"username" gorm:"unique;not null"`
+	IsActive bool   `json:"is_active"`
 
-	Teams        []Team        `gorm:"many2many:user_teams"`
-	PullRequests []PullRequest `gorm:"foreignKey:AuthorID"`
-	Reviews      []PullRequest `gorm:"many2many:pull_request_reviewers"`
+	Teams        []Team        `json:"-" gorm:"many2many:user_teams"`
+	PullRequests []PullRequest `json:"-" gorm:"foreignKey:AuthorID"`
+	Reviews      []PullRequest `json:"-" gorm:"many2many:pull_request_reviewers"`
 }
 
 type Team struct {
-	TeamID uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Name   string
+	ID   string `json:"team_id" gorm:"column:team_id;primaryKey"`
+	Name string `json:"team_name" gorm:"unique;not null"`
 
-	Users []User `gorm:"many2many:user_teams"`
-}
-
-type UserTeam struct {
-	UserID uuid.UUID `gorm:"type:uuid;primaryKey"`
-	TeamID uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Members []User `json:"members" gorm:"many2many:user_teams"`
 }
 
 type PullRequest struct {
-	PullRequestID   uuid.UUID `gorm:"type:uuid;primaryKey"`
+	PullRequestID   string `gorm:"primaryKey"`
 	PullRequestName string
 	Status          string
 	CreatedAt       time.Time
 	MergedAt        *time.Time
 
-	AuthorID uuid.UUID
+	AuthorID string
 	Author   User `gorm:"foreignKey:AuthorID"`
 
 	Reviewers []User `gorm:"many2many:pull_request_reviewers"`
 }
 
 type PullRequestReviewer struct {
-	PullRequestID uuid.UUID `gorm:"type:uuid;primaryKey"`
-	UserID        uuid.UUID `gorm:"type:uuid;primaryKey"`
+	PullRequestID string `gorm:"primaryKey"`
+	UserID        string `gorm:"primaryKey"`
 }
