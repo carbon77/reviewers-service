@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"reviewers/internal/config"
 	"reviewers/internal/db"
+	"reviewers/internal/handler"
+	"reviewers/internal/repository"
+	"reviewers/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,17 +16,16 @@ func main() {
 	conn := db.Connect(cfg)
 
 	router := gin.Default()
-	router.GET("/hello", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello",
-		})
-	})
 
-	router.GET("/users", func(c *gin.Context) {
-		var users []db.User
-		conn.Find(&users)
-		c.JSON(200, users)
-	})
+	{
+		userRepository := repository.NewUserRepository(conn)
+		userService := service.NewUserService(userRepository)
+		userHandler := handler.NewUserHandler(userService)
+
+		userRouter := router.Group("/users")
+		userRouter.POST("/setIsActive", userHandler.SetActiveStatus)
+		userRouter.GET("/getReview", userHandler.GetReview)
+	}
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	router.Run(addr)

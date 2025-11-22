@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"reviewers/internal/config"
 
 	"github.com/google/uuid"
@@ -19,10 +19,10 @@ type User struct {
 func Connect(cfg *config.Config) *gorm.DB {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
 		cfg.DbHost, cfg.DbUser, cfg.DbPassword, cfg.DbName, cfg.DbPort)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to connect database: %s", err)
+		slog.Error("failed to connect database: %s", err.Error())
 	}
 
-	return db
+	return conn
 }

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/caarlos0/env/v11"
 )
@@ -23,7 +23,7 @@ func Load() *Config {
 	}
 
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatal("Can't parse configuration")
+		slog.Error("Can't parse configuration")
 	}
 
 	return &cfg
