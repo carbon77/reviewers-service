@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS user_teams(
 
   PRIMARY KEY (user_id, team_id),
 
-  FOREIGN KEY (team_id) REFERENCES users (user_id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
   FOREIGN KEY (team_id) REFERENCES teams (team_id) ON DELETE CASCADE
 );
 
