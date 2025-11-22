@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"reviewers/internal/errs"
 	"reviewers/internal/models"
 
 	"github.com/google/uuid"
@@ -16,9 +17,19 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 func (r *UserRepository) SetActiveStatus(userID uuid.UUID, active bool) error {
-	return r.db.Model(&models.User{}).
+	result := r.db.Model(&models.User{}).
 		Where("user_id = ?", userID).
-		Update("is_active", active).Error
+		Update("is_active", active)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errs.ResourceNotFound
+	}
+
+	return nil
 }
 
 func (r *UserRepository) GetReview(userID uuid.UUID) ([]models.PullRequest, error) {

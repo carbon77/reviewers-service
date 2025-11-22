@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"reviewers/internal/errs"
 	"reviewers/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -36,7 +38,12 @@ func (h *UserHandler) SetActiveStatus(c *gin.Context) {
 	}
 
 	if err := h.service.SetActiveStatus(userUuid, req.IsActive); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, errs.ResourceNotFound) {
+			response := errs.NewErrorResponse("NOT_FOUND", err.Error())
+			c.JSON(http.StatusNotFound, response)
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
