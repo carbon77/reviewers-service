@@ -32,8 +32,17 @@ func (r *TeamRepository) GetTeam(name string) (*models.Team, error) {
 
 func (r *TeamRepository) CreateTeam(team *models.Team) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		var newUsers []*models.User
+		// Create team
+		team.ID = uuid.New().String()
+		if err := tx.Select("ID", "Name").Create(team).Error; err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return errs.TeamAlreadyExists
+			}
+			return fmt.Errorf("failed to create team %s: %w", team.Name, err)
+		}
 
+		// Create users
+		var newUsers []*models.User
 		for i := range team.Members {
 			user := &team.Members[i]
 
@@ -43,6 +52,7 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 				}
 			} else {
 				user.ID = uuid.New().String()
+				user.TeamID = team.ID
 				newUsers = append(newUsers, user)
 			}
 		}
@@ -51,18 +61,6 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 			if err := tx.Create(newUsers).Error; err != nil {
 				return fmt.Errorf("failed to create users: %w", err)
 			}
-		}
-
-		team.ID = uuid.New().String()
-		if err := tx.Select("ID", "Name").Create(team).Error; err != nil {
-			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return errs.TeamAlreadyExists
-			}
-			return fmt.Errorf("failed to create team %s: %w", team.Name, err)
-		}
-
-		if err := tx.Model(team).Association("Members").Replace(team.Members); err != nil {
-			return fmt.Errorf("failed to associate members with team %s: %w", team.Name, err)
 		}
 
 		return nil

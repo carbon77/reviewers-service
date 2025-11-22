@@ -22,3 +22,7 @@ func NewErrorResponse(code string, message string) ErrorResponse {
 
 var ResourceNotFound = errors.New("resource not found")
 var TeamAlreadyExists = errors.New("team already exists")
+var PullRequestExists = errors.New("pull request exists")
+var PullRequestMerged = errors.New("pull request merged")
+var NotAssigned = errors.New("reviewer not assigned")
+var NoCandidate = errors.New("no candidate for review")
