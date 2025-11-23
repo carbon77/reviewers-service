@@ -43,6 +43,7 @@ func main() {
 	prRouter := router.Group("/pullRequest")
 	prRouter.POST("/create", prHandler.Create)
 	prRouter.POST("/merge", prHandler.Merge)
+	prRouter.POST("/reassign", prHandler.Reassign)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	router.Run(addr)

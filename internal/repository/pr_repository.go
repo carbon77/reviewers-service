@@ -37,6 +37,19 @@ func (r *PRRepository) Create(pr *models.PullRequest) error {
 	})
 }
 
+func (r *PRRepository) Save(pr *models.PullRequest) error {
+	err := r.db.Save(&pr).Error
+	if err != nil {
+		return err
+	}
+
+	if err := r.db.Model(pr).Association("Reviewers").Replace(pr.Reviewers); err != nil {
+		return fmt.Errorf("failed to associate reviewers with pr %s: %w", pr.Name, err)
+	}
+
+	return nil
+}
+
 func (r *PRRepository) Get(pullRequestID string) (*models.PullRequest, error) {
 	var pr models.PullRequest
 	err := r.db.Where("pull_request_id = ?", pullRequestID).Preload("Reviewers").First(&pr).Error

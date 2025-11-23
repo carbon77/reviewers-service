@@ -21,6 +21,6 @@ func (s *TeamService) CreateTeam(newTeam *models.Team) error {
 	return s.repo.CreateTeam(newTeam)
 }
 
-func (s *TeamService) GetReviewerIdsFromUserTeam(userID string) ([]*models.User, error) {
-	return s.repo.GetReviewerIdsFromUserTeam(userID)
+func (s *TeamService) GetReviewerIdsFromUserTeam(userID string, excludedUsers ...string) ([]*models.User, error) {
+	return s.repo.GetReviewerIdsFromUserTeam(userID, excludedUsers...)
 }

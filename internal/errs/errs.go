@@ -1,6 +1,11 @@
 package errs
 
-import "errors"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 
 type ErrorCode int
 
@@ -32,6 +37,49 @@ func (e ErrorCode) String() string {
 	}
 }
 
+func (e ErrorCode) StatusCode() int {
+	switch e {
+	case CodeNotFound:
+		return http.StatusNotFound
+	case CodeTeamExists:
+		return http.StatusBadRequest
+	case CodePRMerged:
+		return http.StatusConflict
+	case CodePRExists:
+		return http.StatusBadRequest
+	case CodeNotAssigned:
+		return http.StatusConflict
+	case CodeNoCandidate:
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+type ApiError struct {
+	Code    ErrorCode
+	Message string
+}
+
+func (e ApiError) Error() string {
+	return e.Message
+}
+
+func (e ApiError) ReturnError(c *gin.Context, message string, args ...any) {
+	var msg string
+	if len(args) == 0 {
+		msg = message
+	} else {
+		msg = fmt.Sprintf(message, args...)
+	}
+
+	c.JSON(e.Code.StatusCode(), NewErrorResponse(e.Code, msg))
+}
+
+func NewApiError(code ErrorCode, message string) ApiError {
+	return ApiError{code, message}
+}
+
 type ErrorResponse struct {
 	Error ErrorBody `json:"error"`
 }
@@ -50,9 +98,9 @@ func NewErrorResponse(code ErrorCode, message string) ErrorResponse {
 	}
 }
 
-var ResourceNotFound = errors.New("resource not found")
-var TeamExists = errors.New("team exists")
-var PullRequestExists = errors.New("pull request exists")
-var PullRequestMerged = errors.New("pull request merged")
-var NotAssigned = errors.New("reviewer not assigned")
-var NoCandidate = errors.New("no candidate for review")
+var ResourceNotFound = NewApiError(CodeNotFound, "resource not found")
+var TeamExists = NewApiError(CodeTeamExists, "team exists")
+var PullRequestExists = NewApiError(CodePRExists, "pull request exists")
+var PullRequestMerged = NewApiError(CodePRMerged, "pull request merged")
+var NotAssigned = NewApiError(CodeNotAssigned, "reviewer not assigned")
+var NoCandidate = NewApiError(CodeNoCandidate, "no candidate for review")

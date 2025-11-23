@@ -67,19 +67,23 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 	})
 }
 
-func (r *TeamRepository) GetReviewerIdsFromUserTeam(userID string) ([]*models.User, error) {
+func (r *TeamRepository) GetReviewerIdsFromUserTeam(userID string, excludedUsers ...string) ([]*models.User, error) {
 	var reviewers []*models.User
 
-	err := r.db.Model(&models.User{}).
+	excludedIds := make([]string, 0, len(excludedUsers)+1)
+	excludedIds = append(excludedIds, excludedUsers...)
+	excludedIds = append(excludedIds, userID)
+
+	query := r.db.Model(&models.User{}).
 		Where("team_id = (?)", r.db.Model(&models.User{}).
 			Select("team_id").
 			Where("user_id = ?", userID).
 			Limit(1),
 		).
-		Where("user_id <> ?", userID).
 		Where("is_active = true").
-		Find(&reviewers).Error
+		Where("user_id NOT IN ?", excludedIds)
 
+	err := query.Find(&reviewers).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.ResourceNotFound

@@ -29,6 +29,11 @@ type MergePRRequest struct {
 	PullRequestID string `json:"pull_request_id"`
 }
 
+type ReassignReviewerRequest struct {
+	PullRequestID string `json:"pull_request_id"`
+	OldReviewerID string `json:"old_reviewer_id"`
+}
+
 func (h *PRHandler) Create(c *gin.Context) {
 	var req CreatePRRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -74,6 +79,27 @@ func (h *PRHandler) Merge(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"pr": pr})
+}
+
+func (h *PRHandler) Reassign(c *gin.Context) {
+	var req ReassignReviewerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
+		return
+	}
+
+	pr, err := h.service.Reassign(req.PullRequestID, req.OldReviewerID)
+	if err != nil {
+		switch err.(type) {
+		case errs.ApiError:
+			err.(errs.ApiError).ReturnError(c, err.Error())
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
