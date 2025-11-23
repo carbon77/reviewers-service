@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reviewers/internal/errs"
 	"reviewers/internal/models"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -34,4 +35,40 @@ func (r *PRRepository) Create(pr *models.PullRequest) error {
 
 		return nil
 	})
+}
+
+func (r *PRRepository) Get(pullRequestID string) (*models.PullRequest, error) {
+	var pr models.PullRequest
+	err := r.db.Where("pull_request_id = ?", pullRequestID).Preload("Reviewers").First(&pr).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ResourceNotFound
+		}
+		return nil, err
+	}
+
+	for _, user := range pr.Reviewers {
+		pr.AssignedReviewers = append(pr.AssignedReviewers, user.ID)
+	}
+
+	return &pr, nil
+}
+
+func (r *PRRepository) Merge(pullRequestID string) error {
+	now := time.Now()
+	pr := models.PullRequest{
+		ID:       pullRequestID,
+		Status:   models.StatusMerged,
+		MergedAt: &now,
+	}
+
+	err := r.db.Model(&pr).Updates(pr).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ResourceNotFound
+		}
+		return err
+	}
+
+	return nil
 }

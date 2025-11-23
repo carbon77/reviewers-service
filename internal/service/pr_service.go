@@ -45,3 +45,20 @@ func (s *PRService) Create(pr *models.PullRequest) error {
 
 	return s.repo.Create(pr)
 }
+
+func (s *PRService) Merge(pullRequestID string) (*models.PullRequest, error) {
+	pr, err := s.repo.Get(pullRequestID)
+	if err != nil || pr == nil {
+		return nil, err
+	}
+
+	if pr.Status == models.StatusMerged {
+		return pr, nil
+	}
+
+	err = s.repo.Merge(pullRequestID)
+	if err != nil {
+		return nil, err
+	}
+	return pr, nil
+}
