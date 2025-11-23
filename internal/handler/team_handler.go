@@ -24,7 +24,7 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 
 	team, err := h.service.GetTeam(name)
 	if errors.Is(err, errs.ResourceNotFound) {
-		response := errs.NewErrorResponse("NOT_FOUND", err.Error())
+		response := errs.NewErrorResponse(errs.CodeNotFound, err.Error())
 		c.JSON(http.StatusNotFound, response)
 		return
 	} else if err != nil {
@@ -38,13 +38,13 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	var team models.Team
 	if err := c.ShouldBindJSON(&team); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
 
 	if err := h.service.CreateTeam(&team); err != nil {
-		if errors.Is(err, errs.TeamAlreadyExists) {
-			response := errs.NewErrorResponse("TEAM_EXISTS", fmt.Sprintf("%s already exists", team.Name))
+		if errors.Is(err, errs.TeamExists) {
+			response := errs.NewErrorResponse(errs.CodeTeamExists, fmt.Sprintf("%s already exists", team.Name))
 			c.JSON(http.StatusBadRequest, response)
 			return
 		}

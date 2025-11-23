@@ -44,11 +44,11 @@ func (h *PRHandler) Create(c *gin.Context) {
 
 	if err := h.service.Create(pr); err != nil {
 		if errors.Is(err, errs.ResourceNotFound) {
-			response := errs.NewErrorResponse("NOT_FOUND", err.Error())
+			response := errs.NewErrorResponse(errs.CodeNotFound, err.Error())
 			c.JSON(http.StatusNotFound, response)
 			return
 		} else if errors.Is(err, errs.PullRequestExists) {
-			response := errs.NewErrorResponse("PR_EXISTS", fmt.Sprintf("PR %s already exists", pr.ID))
+			response := errs.NewErrorResponse(errs.CodePRExists, fmt.Sprintf("PR %s already exists", pr.ID))
 			c.JSON(http.StatusConflict, response)
 			return
 		}
@@ -69,7 +69,7 @@ func (h *PRHandler) Merge(c *gin.Context) {
 	pr, err := h.service.Merge(req.PullRequestID)
 	if err != nil {
 		if errors.Is(err, errs.ResourceNotFound) {
-			response := errs.NewErrorResponse("NOT_FOUND", err.Error())
+			response := errs.NewErrorResponse(errs.CodeNotFound, err.Error())
 			c.JSON(http.StatusNotFound, response)
 			return
 		}

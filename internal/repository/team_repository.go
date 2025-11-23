@@ -36,7 +36,7 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 		team.ID = uuid.New().String()
 		if err := tx.Select("ID", "Name").Create(team).Error; err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return errs.TeamAlreadyExists
+				return errs.TeamExists
 			}
 			return fmt.Errorf("failed to create team %s: %w", team.Name, err)
 		}

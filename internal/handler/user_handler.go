@@ -32,7 +32,7 @@ func (h *UserHandler) SetActiveStatus(c *gin.Context) {
 
 	if err := h.service.SetActiveStatus(req.UserID, req.IsActive); err != nil {
 		if errors.Is(err, errs.ResourceNotFound) {
-			response := errs.NewErrorResponse("NOT_FOUND", err.Error())
+			response := errs.NewErrorResponse(errs.CodeNotFound, err.Error())
 			c.JSON(http.StatusNotFound, response)
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
