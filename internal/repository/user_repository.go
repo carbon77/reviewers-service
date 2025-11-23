@@ -31,10 +31,11 @@ func (r *UserRepository) SetActiveStatus(userID string, active bool) error {
 	return nil
 }
 
-func (r *UserRepository) GetReview(userID string) ([]models.PullRequest, error) {
-	var prs []models.PullRequest
+func (r *UserRepository) GetReview(userID string) ([]models.PullRequestShort, error) {
+	var prs []models.PullRequestShort
 
 	err := r.db.Model(&models.PullRequest{}).
+		Select("pull_requests.pull_request_id", "Name", "AuthorID", "Status").
 		Joins("JOIN pull_request_reviewers prr ON prr.pull_request_id = pull_requests.pull_request_id").
 		Where("prr.user_id = ?", userID).
 		Find(&prs).Error
