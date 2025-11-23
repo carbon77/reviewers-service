@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -27,9 +29,23 @@ type PullRequest struct {
 	AuthorID string `json:"author_id"`
 	Author   User   `json:"-" gorm:"foreignKey:AuthorID"`
 
-	Reviewers []User `json:"-" gorm:"many2many:pull_request_reviewers"`
+	Reviewers         []PullRequestReviewer `json:"-" gorm:"foreignKey:PullRequestID"`
+	AssignedReviewers []string              `json:"assigned_reviewers" gorm:"-"`
+}
 
-	AssignedReviewers []string `json:"assigned_reviewers" gorm:"-"`
+func (pr *PullRequest) AfterFind(tx *gorm.DB) (err error) {
+	if len(pr.Reviewers) > 0 {
+		pr.AssignedReviewers = make([]string, 0, len(pr.Reviewers))
+		for _, reviewer := range pr.Reviewers {
+			pr.AssignedReviewers = append(pr.AssignedReviewers, reviewer.UserID)
+		}
+	}
+	return nil
+}
+
+type PullRequestReviewer struct {
+	PullRequestID string `json:"pull_request_id" gorm:"column:pull_request_id;primaryKey"`
+	UserID        string `json:"user_id" gorm:"column:user_id;primaryKey"`
 }
 
 const StatusOpen = "OPEN"

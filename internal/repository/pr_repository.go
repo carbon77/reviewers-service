@@ -60,10 +60,6 @@ func (r *PRRepository) Get(pullRequestID string) (*models.PullRequest, error) {
 		return nil, err
 	}
 
-	for _, user := range pr.Reviewers {
-		pr.AssignedReviewers = append(pr.AssignedReviewers, user.ID)
-	}
-
 	return &pr, nil
 }
 

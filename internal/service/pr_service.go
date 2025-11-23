@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log/slog"
 	"math/rand/v2"
 	"reviewers/internal/errs"
 	"reviewers/internal/models"
@@ -26,10 +27,13 @@ func (s *PRService) Create(pr *models.PullRequest) error {
 	if err != nil {
 		return err
 	}
+	for _, r := range reviewers {
+		slog.Info("reviewer: %+v", r)
+	}
 
-	pr.Reviewers = getRandomReviewers(reviewers, 2)
+	pr.Reviewers = getRandomReviewers(pr.ID, reviewers, 2)
 	for _, reviewer := range pr.Reviewers {
-		pr.AssignedReviewers = append(pr.AssignedReviewers, reviewer.ID)
+		pr.AssignedReviewers = append(pr.AssignedReviewers, reviewer.UserID)
 	}
 
 	return s.repo.Create(pr)
@@ -49,7 +53,7 @@ func (s *PRService) Merge(pullRequestID string) (*models.PullRequest, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pr, nil
+	return s.repo.Get(pullRequestID)
 }
 
 func (s *PRService) Reassign(pullRequestID, oldReviewerID string) (*models.PullRequest, error) {
@@ -64,11 +68,8 @@ func (s *PRService) Reassign(pullRequestID, oldReviewerID string) (*models.PullR
 	}
 
 	// Check if old reviewer is not assigned
-	for _, user := range pr.Reviewers {
-		pr.AssignedReviewers = append(pr.AssignedReviewers, user.ID)
-	}
-
-	if !slices.Contains(pr.AssignedReviewers, oldReviewerID) {
+	oldReviewerIdx := slices.Index(pr.AssignedReviewers, oldReviewerID)
+	if oldReviewerIdx == -1 {
 		return nil, errs.NotAssigned
 	}
 
@@ -81,30 +82,30 @@ func (s *PRService) Reassign(pullRequestID, oldReviewerID string) (*models.PullR
 		return nil, errs.NoCandidate
 	}
 
-	newReviewer := getRandomReviewers(reviewers, 1)[0]
-	oldReviewerIdx := slices.Index(pr.AssignedReviewers, oldReviewerID)
-
+	newReviewer := getRandomReviewers(pullRequestID, reviewers, 1)[0]
 	pr.Reviewers[oldReviewerIdx] = newReviewer
+
 	pr.AssignedReviewers = make([]string, 0, len(pr.Reviewers))
-	for _, user := range pr.Reviewers {
-		pr.AssignedReviewers = append(pr.AssignedReviewers, user.ID)
+	for _, reviewer := range pr.Reviewers {
+		pr.AssignedReviewers = append(pr.AssignedReviewers, reviewer.UserID)
 	}
+
 	err = s.repo.Save(pr)
 	return pr, err
 }
 
-func getRandomReviewers(reviewers []*models.User, count int) []models.User {
-	shuffled := make([]*models.User, len(reviewers))
-	copy(shuffled, reviewers)
+func getRandomReviewers(pullRequestID string, reviewers []*models.User, count int) []models.PullRequestReviewer {
+	shuffled := make([]models.PullRequestReviewer, 0, len(reviewers))
+	for _, user := range reviewers {
+		shuffled = append(shuffled, models.PullRequestReviewer{
+			UserID:        user.ID,
+			PullRequestID: pullRequestID,
+		})
+	}
+
 	rand.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 
-	assignedReviewers := shuffled[:min(len(shuffled), count)]
-	var assignedUsers []models.User
-
-	for _, user := range assignedReviewers {
-		assignedUsers = append(assignedUsers, *user)
-	}
-	return assignedUsers
+	return shuffled[:min(len(shuffled), count)]
 }
