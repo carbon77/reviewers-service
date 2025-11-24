@@ -1,7 +1,6 @@
 package service
 
 import (
-	"log/slog"
 	"math/rand/v2"
 	"reviewers/internal/errs"
 	"reviewers/internal/models"
@@ -31,9 +30,6 @@ func (s *PRService) Create(pr *models.PullRequest) error {
 	reviewers, err := s.teamService.GetReviewerIdsFromUserTeam(pr.AuthorID)
 	if err != nil {
 		return err
-	}
-	for _, r := range reviewers {
-		slog.Info("reviewer: %+v", r)
 	}
 
 	pr.Reviewers = getRandomReviewers(pr.ID, reviewers, 2)

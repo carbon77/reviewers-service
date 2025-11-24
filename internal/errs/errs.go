@@ -1,7 +1,6 @@
 package errs
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -65,15 +64,8 @@ func (e ApiError) Error() string {
 	return e.Message
 }
 
-func (e ApiError) ReturnError(c *gin.Context, message string, args ...any) {
-	var msg string
-	if len(args) == 0 {
-		msg = message
-	} else {
-		msg = fmt.Sprintf(message, args...)
-	}
-
-	c.JSON(e.Code.StatusCode(), NewErrorResponse(e.Code, msg))
+func (e ApiError) ReturnError(c *gin.Context, message string) {
+	c.JSON(e.Code.StatusCode(), NewErrorResponse(e.Code, message))
 }
 
 func NewApiError(code ErrorCode, message string) ApiError {

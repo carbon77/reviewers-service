@@ -77,7 +77,7 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 
 		if len(newUsers) > 0 {
 			if err := tx.Create(newUsers).Error; err != nil {
-				logger.Error("failed to create users", "error", err, "user_id")
+				logger.Error("failed to create users", "error", err)
 				return fmt.Errorf("failed to create users: %w", err)
 			}
 		}

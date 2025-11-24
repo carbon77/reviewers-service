@@ -15,3 +15,6 @@ build:
 
 down:
 	$(DC) down
+
+test:
+	go test ./...
