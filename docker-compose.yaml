@@ -7,6 +7,7 @@ services:
       DB_PASSWORD: zakat_pwd
       DB_NAME: reviewers_db
       DB_HOST: db
+      GIN_MODE: release
     ports:
       - 8080:8080
     depends_on:
