@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"reviewers/internal/errs"
 	"reviewers/internal/models"
 
@@ -11,33 +12,49 @@ import (
 )
 
 type TeamRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *slog.Logger
 }
 
-func NewTeamRepository(db *gorm.DB) *TeamRepository {
-	return &TeamRepository{db}
+func NewTeamRepository(db *gorm.DB, logger *slog.Logger) *TeamRepository {
+	return &TeamRepository{db, logger}
 }
 
 func (r *TeamRepository) GetTeam(name string) (*models.Team, error) {
+	logger := r.logger.With(
+		"method", "get_team",
+		"team_name", name,
+	)
+	logger.Info("getting team")
+
 	var team models.Team
 
-	result := r.db.Where("name = ?", name).Preload("Members").First(&team)
+	err := r.db.Where("name = ?", name).Preload("Members").First(&team).Error
 
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		logger.Warn("team not found", "error", err)
 		return &team, errs.ResourceNotFound
 	}
 
-	return &team, result.Error
+	return &team, err
 }
 
 func (r *TeamRepository) CreateTeam(team *models.Team) error {
+	logger := r.logger.With(
+		"method", "create_team",
+		"team_name", team.Name,
+	)
+	logger.Info("creating team")
+
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// Create team
 		team.ID = uuid.New().String()
 		if err := tx.Select("ID", "Name").Create(team).Error; err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				logger.Warn("team already exists", "error", err)
 				return errs.TeamExists
 			}
+			logger.Error("failed to create team", "error", err)
 			return fmt.Errorf("failed to create team %s: %w", team.Name, err)
 		}
 
@@ -48,6 +65,7 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 
 			if user.ID != "" {
 				if err := tx.Save(user).Error; err != nil {
+					logger.Error("failed to update user", "error", err, "user_id", user.ID)
 					return fmt.Errorf("failed to update user %s: %w", user.ID, err)
 				}
 			} else {
@@ -59,6 +77,7 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 
 		if len(newUsers) > 0 {
 			if err := tx.Create(newUsers).Error; err != nil {
+				logger.Error("failed to create users", "error", err, "user_id")
 				return fmt.Errorf("failed to create users: %w", err)
 			}
 		}
@@ -68,6 +87,12 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 }
 
 func (r *TeamRepository) GetReviewerIdsFromUserTeam(userID string, excludedUsers ...string) ([]*models.User, error) {
+	logger := r.logger.With(
+		"method", "get_reviewers_from_same_team",
+		"user_id", userID,
+	)
+	logger.Info("getting reviewers from the same team")
+
 	var reviewers []*models.User
 
 	excludedIds := make([]string, 0, len(excludedUsers)+1)
@@ -86,8 +111,10 @@ func (r *TeamRepository) GetReviewerIdsFromUserTeam(userID string, excludedUsers
 	err := query.Find(&reviewers).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("team not found", "error", err)
 			return nil, errs.ResourceNotFound
 		}
+		logger.Error("failed to find users from team", "error", err)
 		return nil, fmt.Errorf("failed to find users from team: %s", err.Error())
 	}
 
@@ -95,5 +122,16 @@ func (r *TeamRepository) GetReviewerIdsFromUserTeam(userID string, excludedUsers
 }
 
 func (r *TeamRepository) DeactivateTeam(teamID string) error {
-	return r.db.Model(&models.User{}).Where("team_id = ?", teamID).Update("is_active", false).Error
+	logger := r.logger.With(
+		"method", "deactivate_team",
+		"team_id", teamID,
+	)
+	logger.Info("deactivating team")
+
+	err := r.db.Model(&models.User{}).Where("team_id = ?", teamID).Update("is_active", false).Error
+	if err != nil {
+		logger.Error("failed to deactivate team", "error", err)
+	}
+
+	return err
 }

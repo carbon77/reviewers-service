@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"reviewers/internal/config"
 	"reviewers/internal/db"
 	"reviewers/internal/handler"
@@ -12,13 +13,15 @@ import (
 )
 
 func main() {
+	logger := slog.Default()
+
 	cfg := config.Load()
 	conn := db.Connect(cfg)
 
 	router := gin.Default()
 
 	// Users
-	userRepository := repository.NewUserRepository(conn)
+	userRepository := repository.NewUserRepository(conn, logger)
 	userService := service.NewUserService(userRepository)
 	userHandler := handler.NewUserHandler(userService)
 
@@ -27,7 +30,7 @@ func main() {
 	userRouter.GET("/getReview", userHandler.GetReview)
 
 	// Teams
-	teamRepository := repository.NewTeamRepository(conn)
+	teamRepository := repository.NewTeamRepository(conn, logger)
 	teamService := service.NewTeamService(teamRepository)
 	teamHandler := handler.NewTeamHandler(teamService)
 
@@ -37,7 +40,7 @@ func main() {
 	teamRouter.POST("/deactivate", teamHandler.DeactivateTeam)
 
 	// Pull requests
-	prRepository := repository.NewPRRepository(conn)
+	prRepository := repository.NewPRRepository(conn, logger)
 	prService := service.NewPRService(prRepository, teamService, userService)
 	prHandler := handler.NewPRHandler(prService)
 
