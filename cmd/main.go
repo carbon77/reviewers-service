@@ -34,6 +34,7 @@ func main() {
 	teamRouter := router.Group("/team")
 	teamRouter.GET("/get", teamHandler.GetTeam)
 	teamRouter.POST("/add", teamHandler.CreateTeam)
+	teamRouter.POST("/deactivate", teamHandler.DeactivateTeam)
 
 	// Pull requests
 	prRepository := repository.NewPRRepository(conn)

@@ -55,3 +55,19 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 
 	c.JSON(http.StatusOK, team)
 }
+
+func (h *TeamHandler) DeactivateTeam(c *gin.Context) {
+	teamID := c.Query("team_id")
+	if teamID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
+		return
+	}
+
+	err := h.service.DeactivateTeam(teamID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "team has been deactivated"})
+}

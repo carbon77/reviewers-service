@@ -93,3 +93,7 @@ func (r *TeamRepository) GetReviewerIdsFromUserTeam(userID string, excludedUsers
 
 	return reviewers, nil
 }
+
+func (r *TeamRepository) DeactivateTeam(teamID string) error {
+	return r.db.Model(&models.User{}).Where("team_id = ?", teamID).Update("is_active", false).Error
+}
