@@ -28,7 +28,7 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 		c.JSON(http.StatusNotFound, response)
 		return
 	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		return
 	}
 
@@ -65,7 +65,7 @@ func (h *TeamHandler) DeactivateTeam(c *gin.Context) {
 
 	err := h.service.DeactivateTeam(teamID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		return
 	}
 

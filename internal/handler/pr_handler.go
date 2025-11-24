@@ -57,7 +57,7 @@ func (h *PRHandler) Create(c *gin.Context) {
 			c.JSON(http.StatusConflict, response)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		return
 	}
 
@@ -78,7 +78,7 @@ func (h *PRHandler) Merge(c *gin.Context) {
 			c.JSON(http.StatusNotFound, response)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		return
 	}
 
@@ -98,7 +98,7 @@ func (h *PRHandler) Reassign(c *gin.Context) {
 		case errs.ApiError:
 			err.(errs.ApiError).ReturnError(c, err.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		}
 		return
 	}

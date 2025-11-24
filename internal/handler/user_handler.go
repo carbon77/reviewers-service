@@ -35,7 +35,7 @@ func (h *UserHandler) SetActiveStatus(c *gin.Context) {
 			response := errs.NewErrorResponse(errs.CodeNotFound, err.Error())
 			c.JSON(http.StatusNotFound, response)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		}
 		return
 	}
@@ -55,7 +55,7 @@ func (h *UserHandler) GetReview(c *gin.Context) {
 
 	prs, err := h.service.GetReview(userId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		return
 	}
 
