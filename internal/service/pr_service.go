@@ -13,10 +13,15 @@ import (
 type PRService struct {
 	repo        *repository.PRRepository
 	teamService *TeamService
+	userService *UserService
 }
 
-func NewPRService(repo *repository.PRRepository, teamService *TeamService) *PRService {
-	return &PRService{repo, teamService}
+func NewPRService(
+	repo *repository.PRRepository,
+	teamService *TeamService,
+	userService *UserService,
+) *PRService {
+	return &PRService{repo, teamService, userService}
 }
 
 func (s *PRService) Create(pr *models.PullRequest) error {
@@ -59,6 +64,11 @@ func (s *PRService) Merge(pullRequestID string) (*models.PullRequest, error) {
 func (s *PRService) Reassign(pullRequestID, oldReviewerID string) (*models.PullRequest, error) {
 	pr, err := s.repo.Get(pullRequestID)
 	if err != nil || pr == nil {
+		return nil, err
+	}
+
+	_, err = s.userService.Get(oldReviewerID)
+	if err != nil {
 		return nil, err
 	}
 

@@ -20,3 +20,7 @@ func (s *UserService) SetActiveStatus(userID string, active bool) error {
 func (s *UserService) GetReview(userID string) ([]models.PullRequestShort, error) {
 	return s.repo.GetReview(userID)
 }
+
+func (s *UserService) Get(userID string) (*models.User, error) {
+	return s.repo.Get(userID)
+}

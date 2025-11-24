@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"reviewers/internal/errs"
 	"reviewers/internal/models"
 
@@ -41,4 +42,18 @@ func (r *UserRepository) GetReview(userID string) ([]models.PullRequestShort, er
 		Find(&prs).Error
 
 	return prs, err
+}
+
+func (r *UserRepository) Get(userID string) (*models.User, error) {
+	var user models.User
+
+	err := r.db.Where("user_id = ?", userID).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ResourceNotFound
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }

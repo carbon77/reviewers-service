@@ -37,7 +37,7 @@ func main() {
 
 	// Pull requests
 	prRepository := repository.NewPRRepository(conn)
-	prService := service.NewPRService(prRepository, teamService)
+	prService := service.NewPRService(prRepository, teamService, userService)
 	prHandler := handler.NewPRHandler(prService)
 
 	prRouter := router.Group("/pullRequest")
