@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
 	"reviewers/internal/config"
 	"reviewers/internal/db"
 	"reviewers/internal/handler"
-	"reviewers/internal/repository"
-	"reviewers/internal/service"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,40 +19,58 @@ import (
 func main() {
 	logger := slog.Default()
 
-	cfg := config.Load()
-	conn := db.Connect(cfg)
+	cfg, err := config.Load()
+	if err != nil {
+		logger.Error("Failed to load config", "error", err)
+		os.Exit(1)
+	}
+
+	conn, err := db.Connect(cfg)
+	if err != nil {
+		logger.Error("Failed to connect to database")
+		os.Exit(1)
+	}
+	defer func() {
+		sqlDB, _ := conn.DB()
+		sqlDB.Close()
+		logger.Info("Databse connection closed")
+	}()
 
 	router := gin.Default()
-
-	// Users
-	userRepository := repository.NewUserRepository(conn, logger)
-	userService := service.NewUserService(userRepository)
-	userHandler := handler.NewUserHandler(userService)
-
-	userRouter := router.Group("/users")
-	userRouter.POST("/setIsActive", userHandler.SetActiveStatus)
-	userRouter.GET("/getReview", userHandler.GetReview)
-
-	// Teams
-	teamRepository := repository.NewTeamRepository(conn, logger)
-	teamService := service.NewTeamService(teamRepository)
-	teamHandler := handler.NewTeamHandler(teamService)
-
-	teamRouter := router.Group("/team")
-	teamRouter.GET("/get", teamHandler.GetTeam)
-	teamRouter.POST("/add", teamHandler.CreateTeam)
-	teamRouter.POST("/deactivate", teamHandler.DeactivateTeam)
-
-	// Pull requests
-	prRepository := repository.NewPRRepository(conn, logger)
-	prService := service.NewPRService(prRepository, teamService, userService)
-	prHandler := handler.NewPRHandler(prService)
-
-	prRouter := router.Group("/pullRequest")
-	prRouter.POST("/create", prHandler.Create)
-	prRouter.POST("/merge", prHandler.Merge)
-	prRouter.POST("/reassign", prHandler.Reassign)
+	handler.InitHandlers(logger, conn, router)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	router.Run(addr)
+	server := &http.Server{
+		Addr:    addr,
+		Handler: router,
+	}
+
+	serverErrors := make(chan error, 1)
+	go func() {
+		logger.Info("Starting HTTP server", "address", addr)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			serverErrors <- err
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case err := <-serverErrors:
+		logger.Error("Server error", "error", err)
+
+	case <-quit:
+		logger.Info("Shutting down")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(ctx); err != nil {
+			logger.Error("Shutdown failed", "error", err)
+			server.Close()
+		} else {
+			logger.Info("Shutdown completed")
+		}
+	}
 }

@@ -1,8 +1,6 @@
 package config
 
 import (
-	"log/slog"
-
 	"github.com/caarlos0/env/v11"
 )
 
@@ -15,7 +13,7 @@ type Config struct {
 	DbPort     int    `env:"DB_PORT"`
 }
 
-func Load() *Config {
+func Load() (*Config, error) {
 	cfg := Config{
 		Port:   8080,
 		DbHost: "localhost",
@@ -23,8 +21,8 @@ func Load() *Config {
 	}
 
 	if err := env.Parse(&cfg); err != nil {
-		slog.Error("Can't parse configuration")
+		return nil, err
 	}
 
-	return &cfg
+	return &cfg, nil
 }
