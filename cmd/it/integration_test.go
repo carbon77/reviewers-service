@@ -42,7 +42,9 @@ func TestMain(m *testing.M) {
 	port, _ := pgContainer.MappedPort(ctx, "5432")
 
 	dsn := fmt.Sprintf("host=%s port=%s user=test password=secret dbname=testdb sslmode=disable", host, port.Port())
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+		TranslateError: true,
+	})
 	if err != nil {
 		panic(err)
 	}

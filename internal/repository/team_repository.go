@@ -62,15 +62,15 @@ func (r *TeamRepository) CreateTeam(team *models.Team) error {
 		var newUsers []*models.User
 		for i := range team.Members {
 			user := &team.Members[i]
+			user.TeamID = team.ID
 
 			if user.ID != "" {
-				if err := tx.Save(user).Error; err != nil {
+				if err := tx.Model(&user).Updates(&user).Error; err != nil {
 					logger.Error("failed to update user", "error", err, "user_id", user.ID)
 					return fmt.Errorf("failed to update user %s: %w", user.ID, err)
 				}
 			} else {
 				user.ID = uuid.New().String()
-				user.TeamID = team.ID
 				newUsers = append(newUsers, user)
 			}
 		}
