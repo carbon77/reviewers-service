@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"reviewers/internal/errs"
 	"reviewers/internal/service"
@@ -31,10 +30,10 @@ func (h *UserHandler) SetActiveStatus(c *gin.Context) {
 	}
 
 	if err := h.service.SetActiveStatus(req.UserID, req.IsActive); err != nil {
-		if errors.Is(err, errs.ResourceNotFound) {
-			response := errs.NewErrorResponse(errs.CodeNotFound, err.Error())
-			c.JSON(http.StatusNotFound, response)
-		} else {
+		switch err.(type) {
+		case errs.ApiError:
+			err.(errs.ApiError).ReturnError(c, err.Error())
+		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		}
 		return

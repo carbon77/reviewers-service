@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"reviewers/internal/errs"
@@ -23,12 +22,13 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 	name := c.Query("team_name")
 
 	team, err := h.service.GetTeam(name)
-	if errors.Is(err, errs.ResourceNotFound) {
-		response := errs.NewErrorResponse(errs.CodeNotFound, err.Error())
-		c.JSON(http.StatusNotFound, response)
-		return
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
+	if err != nil {
+		switch err.(type) {
+		case errs.ApiError:
+			err.(errs.ApiError).ReturnError(c, err.Error())
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
+		}
 		return
 	}
 
@@ -43,13 +43,12 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 	}
 
 	if err := h.service.CreateTeam(&team); err != nil {
-		if errors.Is(err, errs.TeamExists) {
-			response := errs.NewErrorResponse(errs.CodeTeamExists, fmt.Sprintf("%s already exists", team.Name))
-			c.JSON(http.StatusBadRequest, response)
-			return
+		switch err.(type) {
+		case errs.ApiError:
+			err.(errs.ApiError).ReturnError(c, fmt.Sprintf("%s already exists", team.Name))
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "something bad happened"})
 		return
 	}
 
